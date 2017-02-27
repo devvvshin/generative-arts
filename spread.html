@@ -72,7 +72,9 @@
         requestAnimationFrame(() => draw());
       }
 
-      draw();
+      setTimeout(() => {
+        draw();
+      }, 1000);
     </script>
   </body>
 </html>
