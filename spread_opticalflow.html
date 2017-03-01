@@ -25,7 +25,7 @@
       canvas.height = height;
       document.body.appendChild(canvas);
       const ctx = canvas.getContext('2d');
-      const LINE_COUNT = 400;
+      const LINE_COUNT = 10;
       const X_INTERVAL = 5;
       const Y_INTERVAL = 5;
       const LINE_WIDTH = 3;
@@ -88,8 +88,19 @@
         requestAnimationFrame(() => draw());
       }
 
-      draw();
+      setTimeout(() => {
+        draw();
 
+        var flow = new oflow.WebCamFlow();
+        flow.onCalculated(function(direction) {
+          momentPoint.x += -(((direction.u * X_INTERVAL) >> 0) / X_INTERVAL >> 0) * X_INTERVAL * 2;
+          momentPoint.y += ((direction.v * Y_INTERVAL >> 0) / Y_INTERVAL >> 0) * Y_INTERVAL * 2;
+          lines.push(genNewLine());
+
+        });
+        flow.startCapture();
+
+      }, 1000);
     </script>
   </body>
 </html>
