@@ -18,9 +18,9 @@
     <script>
       const WIDTH = window.screen.width;
       const HEIGHT = window.screen.height;
-      const MAX_SPEED = 20;
-      const START_COUNT = 1200;
-      const MAX_RADIUS = 6;
+      const MAX_SPEED = 14;
+      const START_COUNT = 1000;
+      const MAX_RADIUS = 4;
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -77,12 +77,15 @@
         return new Star();
       })
 
+      let camera = {
+        x: 0, y: 0
+      }
       const draw = () => {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
         ctx.save();
-        ctx.translate(WIDTH / 2, HEIGHT / 2);
+        ctx.translate(WIDTH / 2 - camera.x, HEIGHT / 2 - camera.y);
         stars.forEach((star) => {
           star.update();
           star.draw();
@@ -98,10 +101,12 @@
         const x = (WIDTH/2 - e.layerX)
         const y = (HEIGHT/2 - e.layerY)
 
+        camera.x = x;
+        camera.y = y;
         const MAX_LEN = Math.sqrt(Math.pow(WIDTH / 2, 2) + Math.pow(HEIGHT / 2, 2));
         const len = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 
-        speed = len / MAX_LEN * MAX_SPEED;
+//        speed = len / MAX_LEN * MAX_SPEED;
       });
       </script>
   </body>
