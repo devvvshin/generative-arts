@@ -1,0 +1,171 @@
+<!DOCTYPE>
+<html>
+<head>
+</head>
+<body>
+
+  <script>
+    const WIDTH = 800;
+    const HEIGHT = 800;
+    const canvas = document.createElement('canvas');
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    const gravity = [0, 0.06];
+
+    class Firework {
+      constructor(pos) {
+        this.mainParticle = new Particle({isMainParticle:true});
+        if(pos) {
+          this.mainParticle.x = pos.x;
+          this.mainParticle.y = pos.y;
+          this.mainParticle.alive = 0;
+          this.once = true;
+        }
+        this.subParticles = [];
+      }
+
+      update() {
+        this.mainParticle.update();
+        if (!this.mainParticle.isAlive() && (this.subParticles.length == 0)) {
+          this.subParticles = Array.from(new Array(100)).map((d, i) => {
+            const subParticle = new Particle({pos:{
+              x: this.mainParticle.x,
+              y: this.mainParticle.y,
+            },
+            color: this.mainParticle.color,
+          });
+
+            subParticle.v = [(Math.cos(Math.PI * 2 * i / 10) + ((-0.5 + Math.random()))) * (1. + Math.random()),
+                             (Math.sin(Math.PI * 2 * i / 10) + ((-0.5 + Math.random()))) * (1. + Math.random())];
+            subParticle.a = [0, 0];
+            return subParticle;
+          })
+        }
+
+        this.subParticles.forEach((subParticle, i) => {
+          subParticle.update();
+          if(!subParticle.isAlive()) this.subParticles.splice(i, 1);
+        });
+
+        if (!this.mainParticle.isAlive() && (this.subParticles.length == 0) && !this.once) {
+          this.mainParticle = new Particle({isMainParticle:true});
+          this.subParticles = [];
+        }
+      }
+
+      draw() {
+        this.mainParticle.draw();
+        this.subParticles.forEach((subParticle) => {
+          subParticle.draw()
+        });
+      }
+    }
+
+
+    class Particle {
+      constructor({pos, isMainParticle, color}) {
+        this.x = Math.random() * WIDTH;
+        this.y = HEIGHT;
+        this.v = [0, -(0.05 + Math.random() * 0.1)];
+        this.a = [0, -(0.05 + Math.random() * 0.1)];
+        this.alive_count = 50 + ((100 * Math.random()) >> 0  )
+        this.alive = this.alive_count;
+        this.color = (60 * Math.random()) >> 0;
+
+        this.r = 1.0;
+        this.isMainParticle = isMainParticle;
+
+        if (pos) {
+          this.x = pos.x;
+          this.y = pos.y;
+        }
+        if (color) this.color = color;
+      }
+
+
+      isAlive() {
+        return this.alive > 0;
+      }
+
+      update() {
+        if(!this.isMainParticle) {
+          this.a[0] += gravity[0];
+          this.a[1] += gravity[1];
+        }
+
+        this.v[0] += this.a[0];
+        this.v[1] += this.a[1];
+
+        if(!this.isMainParticle) {
+          this.a[0] = 0;
+          this.a[1] = 0;
+        }
+
+        this.x += this.v[0];
+        this.y += this.v[1];
+
+        this.alive--;
+      }
+
+      draw() {
+        if(this.isAlive()) {
+          ctx.beginPath();
+          ctx.fillStyle = (this.isMainParticle) ? 'hsla(' + this.color + ', 100%, 50%, ' + (1. - this.alive/this.alive_count) + ')' : 'hsla(' + this.color + ', 100%, 50%, ' + (this.alive/this.alive_count) + ')'
+          ctx.arc(this.x, this.y,
+            (this.isMainParticle) ? (1. - this.alive/this.alive_count) * this.r * 1.4 : this.r,
+
+            0, Math.PI * 2);
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+    }
+
+    const fireworks = Array.from(new Array(10)).map(() => new Firework())
+
+    function update() {
+      fireworks.forEach((firework, i) => {
+        firework.update();
+
+        if (firework.once && !firework.mainParticle.isAlive() && firework.subParticles.length == 0) {
+          fireworks.splice(i, 1);
+        }
+      })
+    }
+
+    function draw() {
+      ctx.fillStyle = 'rgba(51, 51, 51, 0.15)';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      fireworks.forEach((firework) => {
+        firework.draw();
+      })
+    }
+
+    function run() {
+      update();
+      draw();
+      requestAnimationFrame(() => run());
+    }
+
+    run();
+
+    canvas.addEventListener('mousemove', ({layerX, layerY}) => {
+
+      if(Math.random() < 0.05) {
+        fireworks.push(new Firework(
+          {
+            x: layerX,
+            y: layerY,
+          }
+        ))
+      }
+    })
+
+
+  </script>
+</body>
+</html>
