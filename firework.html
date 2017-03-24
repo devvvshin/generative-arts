@@ -64,6 +64,27 @@
       }
     }
 
+    const colors = [{
+      r: 105,
+      g: 210,
+      b: 231
+    }, {
+      r: 167,
+      g: 219,
+      b: 216
+    }, {
+      r: 224,
+      g: 228,
+      b: 204
+    }, {
+      r: 243,
+      g: 134,
+      b: 48
+    }, {
+      r: 250,
+      g: 105,
+      b: 0
+    }];
 
     class Particle {
       constructor({pos, isMainParticle, color}) {
@@ -73,7 +94,8 @@
         this.a = [0, -(0.05 + Math.random() * 0.1)];
         this.alive_count = 50 + ((100 * Math.random()) >> 0  )
         this.alive = this.alive_count;
-        this.color = (60 * Math.random()) >> 0;
+        this.color = colors[Math.random() * colors.length >> 0]
+        //;(60 * Math.random()) >> 0;
 
         this.r = 1.0;
         this.isMainParticle = isMainParticle;
@@ -113,10 +135,9 @@
       draw() {
         if(this.isAlive()) {
           ctx.beginPath();
-          ctx.fillStyle = (this.isMainParticle) ? 'hsla(' + this.color + ', 100%, 50%, ' + (1. - this.alive/this.alive_count) + ')' : 'hsla(' + this.color + ', 100%, 50%, ' + (this.alive/this.alive_count) + ')'
+          ctx.fillStyle = (this.isMainParticle) ? `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${1. - this.alive/this.alive_count})` : `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.alive/this.alive_count})`
           ctx.arc(this.x, this.y,
             (this.isMainParticle) ? (1. - this.alive/this.alive_count) * this.r * 1.4 : this.r,
-
             0, Math.PI * 2);
           ctx.fill();
           ctx.closePath();
@@ -137,7 +158,7 @@
     }
 
     function draw() {
-      ctx.fillStyle = 'rgba(51, 51, 51, 0.15)';
+      ctx.fillStyle = `rgba(${colors[2].r}, ${colors[2].g}, ${colors[2].b}, 0.15)`;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
       fireworks.forEach((firework) => {
