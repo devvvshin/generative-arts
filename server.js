@@ -1,5 +1,3 @@
-const exec = require('child-process').exec
+const exec = require('child_process').exec
 
-const t = exec('n');
-
-t.stdin.
+const t = exec('git push origin master | devvvshin');
