@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <haed>
+    <style>
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+    <script src='./lib/three.min.js'></script>
+    <script src='./lib/OrbitControls.js'></script>
+    <script src='./lib/simplex-noise.js'></script>
+  </head>
+
+  <body>
+    <script>
+      const WIDTH = 800;
+      const HEIGHT = 800;
+      const canvas = document.createElement('canvas');
+      canvas.width = WIDTH;
+      canvas.height = HEIGHT;
+      document.body.appendChild(canvas);
+
+
+      const renderer = new THREE.WebGLRenderer({canvas})
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, WIDTH / HEIGHT, 1, 10000);
+      camera.position.z = 1000;
+
+      // const cube = new THREE.Mesh(new THREE.CubeGeometry(200, 200, 200), new THREE.MeshNormalMaterial());
+      // cube.position.y = 150;
+      //
+      // scene.add(cube);
+
+      const simplex = new SimplexNoise();
+
+      let focusPos = {x: 0, y: 0};
+      const particleCount = 64 * 64;
+      const LIFE = 50;
+      const radius = 10;
+      const size = 4;
+      const particles = [];
+
+      class Particle {
+        constructor(pos, scene) {
+          const geom = new THREE.Geometry();
+          const v1 = new THREE.Vector3(-size/2, 0, 0);
+          const v2 = new THREE.Vector3(size/2, 0, 0);
+          const v3 = new THREE.Vector3(0, size, 0);
+
+          geom.vertices.push(v1);
+          geom.vertices.push(v2);
+          geom.vertices.push(v3);
+
+          geom.faces.push( new THREE.Face3( 0, 1, 2 ) );
+          geom.computeFaceNormals();
+          const obj = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({ color: 0xffffff}));
+
+          obj.position.x = pos.x;
+          obj.position.y = pos.y;
+          obj.position.z = pos.z;
+
+          scene.add(obj);
+          this.obj = obj;
+
+          this.initPos = pos;
+          this.life = (Math.random() * LIFE >> 0 );
+          this.v = {
+            x: 0, y:0, z: 0
+          }
+        }
+
+        update(camera, t) {
+          const { obj, initPos, life, v } = this;
+          obj.geometry.center();
+          obj.rotation.z+= Math.PI * 0.1;
+
+          const curlVal = curl({
+            x: initPos.x * 100,
+            y: initPos.y * 100,
+            z: initPos.z * 100
+          }, t / 100, 0.1 + (1.0 - (LIFE - life) / LIFE) * 0.1);
+
+          const speed = 10;
+          obj.position.x += curlVal[0] * speed + v.x;
+          obj.position.y += curlVal[1] * speed + v.y;
+          obj.position.z += curlVal[2] * speed + v.z;
+
+          this.life--;
+        }
+
+        reset(pos) {
+          const { obj } = this;
+          obj.position.x = pos.x;
+          obj.position.y = pos.y;
+          obj.position.z = pos.z;
+
+          this.life = (Math.random() * LIFE >> 0 );
+        }
+
+        isAlive() {
+          return this.life > 0;
+        }
+
+      }
+
+      function randomSpherePoint(x0,y0,z0,radius){
+         var u = Math.random();
+         var v = Math.random();
+         var theta = 2 * Math.PI * u;
+         var phi = Math.acos(2 * v - 1);
+         var x = x0 + (radius * Math.sin(phi) * Math.cos(theta) + Math.random() * radius);
+         var y = y0 + (radius * Math.sin(phi) * Math.sin(theta) + Math.random() * radius);
+         var z = z0 + (radius * Math.cos(phi) + Math.random() * radius);
+         return {x,y,z};
+      }
+
+      function curl(p, noiseTime, persistence ) {
+
+          const xNoisePotentialDerivatives = [0.0, 0.0, 0.0];
+          const yNoisePotentialDerivatives = [0.0, 0.0, 0.0];
+          const zNoisePotentialDerivatives = [0.0, 0.0, 0.0];;
+
+          for (let i = 0; i < 3; ++i) {
+
+              let twoPowI = Math.pow(2.0, i);
+              let scale = 0.5 * twoPowI * Math.pow(persistence, i);
+
+              xNoisePotentialDerivatives[0] += simplex.noise2D(p.x * twoPowI, noiseTime) * scale;
+              xNoisePotentialDerivatives[1] += simplex.noise2D(p.y * twoPowI, noiseTime) * scale;
+              xNoisePotentialDerivatives[2] += simplex.noise2D(p.z * twoPowI, noiseTime) * scale;
+
+              yNoisePotentialDerivatives[0] += simplex.noise2D(p.x + 123.4 * twoPowI, noiseTime) * scale;
+              yNoisePotentialDerivatives[1] += simplex.noise2D(p.y * 129845.6 * twoPowI, noiseTime) * scale;
+              yNoisePotentialDerivatives[2] += simplex.noise2D(p.z * -1239.1 * twoPowI, noiseTime) * scale;
+
+              zNoisePotentialDerivatives[0] += simplex.noise2D(p.x + -9519.0 * twoPowI, noiseTime) * scale;
+              zNoisePotentialDerivatives[1] += simplex.noise2D(p.y * 9051.0 * twoPowI, noiseTime) * scale;
+              zNoisePotentialDerivatives[2] += simplex.noise2D(p.z * -123.0 * twoPowI, noiseTime) * scale;
+
+          }
+
+//          console.log(zNoisePotentialDerivatives[1] - yNoisePotentialDerivatives[2])
+          return [
+              zNoisePotentialDerivatives[1] - yNoisePotentialDerivatives[2],
+              xNoisePotentialDerivatives[2] - zNoisePotentialDerivatives[0],
+              yNoisePotentialDerivatives[0] - xNoisePotentialDerivatives[1]
+          ];
+
+      }
+
+
+      for(let i = 0; i < particleCount; i++) {
+
+        // const pos = {
+        //   x: (Math.random() - 0.5) * 100,
+        //   y: (Math.random() - 0.5) * 100,
+        //   z: (Math.random() - 0.5) * 100
+        // }
+        const pos = randomSpherePoint(focusPos.x, focusPos.y, 0, radius);
+
+//        console.log(pos);
+        particles.push(new Particle(pos, scene));
+      }
+
+      let t = 0;
+      function draw() {
+        t++;
+        particles.forEach((particle) => {
+          particle.update(camera, t)
+          if(!particle.isAlive()) {
+            const pos = randomSpherePoint(focusPos.x, focusPos.y, 0, radius);
+            particle.reset(pos);
+          }
+        });
+        renderer.render(scene, camera);
+        requestAnimationFrame(draw);
+      }
+
+      var spotLight = new THREE.SpotLight( 0xffffff );
+spotLight.position.set( 100, 1000, 100 );
+
+spotLight.castShadow = true;
+
+spotLight.shadow.mapSize.width = 1024;
+spotLight.shadow.mapSize.height = 1024;
+
+spotLight.shadow.camera.near = 500;
+spotLight.shadow.camera.far = 4000;
+spotLight.shadow.camera.fov = 30;
+
+scene.add( spotLight );
+
+      draw();
+
+      const controls = new THREE.OrbitControls( camera );
+      controls.enabled = true;
+
+      controls.addEventListener('change', () => {
+        particles.forEach((particle) => {
+          particle.obj.lookAt(camera.position);
+        });
+      })
+
+      let prevPos = {
+        x: WIDTH / 2,
+        y: HEIGHT / 2
+      }
+      canvas.addEventListener('mousemove', ({layerX, layerY}) => {
+
+        focusPos.x = ((layerX / WIDTH) - 0.5) * 2 * 500;
+        focusPos.y = -((layerY / HEIGHT) - 0.5) * 2 * 500;
+
+        particles.forEach((particle) => {
+          particle.v.x = (prevPos.x - layerX) * 0.5 * Math.random();
+          particle.v.y = -(prevPos.y - layerY) * 0.5 * Math.random();
+        })
+
+        prevPos.x = layerX;
+        prevPos.y = layerY;
+      });
+
+    </script>
+  </body>
+</html>
