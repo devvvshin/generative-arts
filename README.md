@@ -1,4 +1,5 @@
+
 # Generative Arts
 
 ## Spread
-<img src='./assets/spread.gif'>
+<img style='max-width=20px' id='imgimgimgTest' src='./assets/spread.gif'>
