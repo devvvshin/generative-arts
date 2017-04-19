@@ -33,7 +33,7 @@
     const geometry_ = new THREE.BoxGeometry(particleSize, particleSize, particleSize);
     const particleCount = 1;
     const translates = new Float32Array(particleCount * 3);
-    const normals = new Float32Array(particleCount * 6 * 4 * 3);
+    const normals = new Float32Array(particleCount * 3);
 
     for(let i = 0; i < particleCount; i++) {
       const ti = i * 3;
@@ -44,7 +44,7 @@
     }
 
     geometry.addAttribute('translate', new THREE.InstancedBufferAttribute(translates, 3, 1));
-    geometry.addAttribute('normal', new THREE.InstancedBufferAttribute(normals, 3, 24));
+    geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
 
     const vertexShader = `
       precision highp float;
@@ -76,11 +76,11 @@
         float light = dot(directional_light, v_normal);
         vec3 l_color = color * light;
 
-        gl_FragColor = vec4(l_color, 1.0);
+        gl_FragColor = vec4(v_normal, 1.0);
 
-        if(v_normal.x >= 0.0) {
-          gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
-        }
+        // if(v_normal.x >= 0.5) {
+        //   gl_FragColor = vec4(0.0, 1.0, 1.0, 1.0);
+        // }
       }
     `;
 
@@ -102,9 +102,10 @@
     const dummyMesh = new THREE.Mesh(dummyGeometry, dummyMaterial);
 //    scene.add(dummyMesh);
 
+    geometry.computeVertexNormals();
     function draw(t) {
       renderer.render(scene, camera);
-      geometry.computeVertexNormals();
+
       requestAnimationFrame(draw);
     }
 
